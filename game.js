@@ -274,16 +274,28 @@ class Boss {
         this.targetY = 100;
         this.points = 10000;
 
-        // Загрузка спрайта
+        // Спрайт
         this.sprite = new Image();
         this.sprite.src = 'assets/hibachi.png';
-        this.spriteWidth = 140;   // подгони под реальные размеры спрайта
-        this.spriteHeight = 140;
+        this.width = 140;
+        this.height = 140;
+        this.hitboxRadius = 45;
+
+        // Параметры шума для случайного движения
+        this.baseX = 200;          // центр по X
+        this.baseY = this.targetY; // центр по Y (после входа)
+        this.noisePhaseX = Math.random() * 100;
+        this.noisePhaseY = Math.random() * 100;
+        this.noiseAmpX = 40;       // амплитуда смещения по горизонтали
+        this.noiseAmpY = 25;       // амплитуда по вертикали
+        this.noiseSpeedX = 0.023;  // скорость изменения фазы X
+        this.noiseSpeedY = 0.017;  // скорость изменения фазы Y
     }
 
     update() {
         this.timer++;
 
+        // Плавный вход
         if (!this.entered) {
             this.y += (this.targetY - this.y) * 0.03;
             if (Math.abs(this.y - this.targetY) < 1) {
@@ -294,6 +306,23 @@ class Boss {
             }
             return;
         }
+
+        // === СЛУЧАЙНОЕ ДВИЖЕНИЕ (ШУМ) ===
+        this.noisePhaseX += this.noiseSpeedX;
+        this.noisePhaseY += this.noiseSpeedY;
+
+        // Комбинируем две синусоиды для более естественного движения
+        const offsetX = Math.sin(this.noisePhaseX) * this.noiseAmpX
+                      + Math.sin(this.noisePhaseX * 2.3) * (this.noiseAmpX * 0.3);
+        const offsetY = Math.cos(this.noisePhaseY) * this.noiseAmpY
+                      + Math.cos(this.noisePhaseY * 1.8) * (this.noiseAmpY * 0.3);
+
+        this.x = this.baseX + offsetX;
+        this.y = this.baseY + offsetY;
+
+        // Ограничение, чтобы не уходил за края
+        this.x = Math.max(60, Math.min(340, this.x));
+        this.y = Math.max(60, Math.min(150, this.y));
 
         // Атака Hibachi: два наложенных спиральных кольца с разной скоростью
         // Пули большие и быстрые
