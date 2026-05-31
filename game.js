@@ -294,7 +294,7 @@ class Boss {
         if (this.timer % 4 === 0) {
             const bulletCount = 24;
             // Первое кольцо (быстрое)
-            const base1 = this.timer * 0.09;
+            const base1 = this.timer * 0.02;
             for (let i = 0; i < bulletCount; i++) {
                 const angle = base1 + (Math.PI * 2 / bulletCount) * i;
                 const bullet = new Bullet(this.x, this.y, angle, 3.5, true);
