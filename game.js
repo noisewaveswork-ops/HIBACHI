@@ -297,10 +297,10 @@ class Boss {
 
         // Атака Hibachi: два наложенных спиральных кольца с разной скоростью
         // Пули большие и быстрые
-        if (this.timer % 4 === 0) {
+        if (this.timer % 6 === 0) {
             const bulletCount = 6;
             // Первое кольцо (быстрое)
-            const base1 = this.timer * 0.01;
+            const base1 = this.timer * 0.03;
             for (let i = 0; i < bulletCount; i++) {
                 const angle = base1 + (Math.PI * 2 / bulletCount) * i;
                 const bullet = new Bullet(this.x, this.y, angle, 3.5, true);
@@ -309,7 +309,7 @@ class Boss {
                 this.game.bullets.push(bullet);
             }
             // Второе кольцо (медленнее, вращается в противоположную сторону)
-            const base2 = -this.timer * 0.005;
+            const base2 = -this.timer * 0.01;
             for (let i = 0; i < bulletCount; i++) {
                 const angle = base2 + (Math.PI * 2 / bulletCount) * i;
                 const bullet = new Bullet(this.x, this.y, angle, 2.8, true);
