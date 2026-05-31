@@ -86,7 +86,6 @@ class SoundManager {
         if (this.ctx) setTimeout(() => this.playTone(800, 0.15, 'square', 0.1), 150);
         if (this.ctx) setTimeout(() => this.playTone(1000, 0.2, 'square', 0.12), 300);
     }
-
     pauseAll() {
         if (this.bgmElement) {
             this.bgmElement.pause();
@@ -239,7 +238,7 @@ class HomingBullet extends Bullet {
         let closestTarget = null;
         let closestDist = Infinity;
         
-        if (this.game.boss && this.game.boss.health > 0) {
+        if (this.game.boss) {
             const dx = this.game.boss.x - this.x;
             const dy = this.game.boss.y - this.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
@@ -270,183 +269,52 @@ class Boss {
         this.game = game;
         this.maxHealth = 250;
         this.health = this.maxHealth;
-        this.phase = 1;
         this.timer = 0;
         this.entered = false;
         this.targetY = 100;
         this.points = 10000;
-
-        // Боковые модули (крылья)
-        this.modules = [
-            { x: -70, y: 20, hp: 30, side: 'left' },
-            { x: 70, y: 20, hp: 30, side: 'right' }
-        ];
-
-        this.attackTimer = 0;
-        this.attackIndex = 0;
-        // Наборы атак для каждой фазы (паттерны описаны ниже)
-        this.phaseAttacks = {
-            1: ['spiral', 'aimed'],
-            2: ['spiral', 'ring', 'aimed'],
-            3: ['spiral', 'ring', 'blade'],
-            4: ['spiral', 'ring', 'blade', 'rain']
-        };
     }
 
     update() {
-        // Обновление модулей
-        for (const m of this.modules) {
-            if (m.hp <= 0) continue;
-            if (this.phase >= 2 && this.timer % 70 === 0) {
-                const angle = Math.atan2(
-                    this.game.player.y - (this.y + m.y),
-                    this.game.player.x - (this.x + m.x)
-                );
-                this.game.bullets.push(new Bullet(this.x + m.x, this.y + m.y, angle, 4, true));
-            }
-        }
-
         this.timer++;
 
-        // Плавный вход
         if (!this.entered) {
             this.y += (this.targetY - this.y) * 0.03;
             if (Math.abs(this.y - this.targetY) < 1) {
                 this.y = this.targetY;
                 this.entered = true;
+                this.timer = 0;
                 this.game.sound.bossAppear();
             }
             return;
         }
 
-        // Определение фазы по здоровью
-        const hpRatio = this.health / this.maxHealth;
-        let newPhase;
-        if (hpRatio > 0.75) newPhase = 1;
-        else if (hpRatio > 0.45) newPhase = 2;
-        else if (hpRatio > 0.2) newPhase = 3;
-        else newPhase = 4;
-
-        if (newPhase !== this.phase) {
-            this.phase = newPhase;
-            this.timer = 0;
-            this.attackTimer = 0;
-            this.attackIndex = 0;
-            this.game.sound.bossPhaseChange();
-        }
-
-        // Система атак по таймеру
-        const attacks = this.phaseAttacks[this.phase];
-        if (!attacks) return;
-
-        // Выполняем текущую атаку
-        if (this.attackTimer <= 0) {
-            // Переключение на следующую атаку
-            this.attackIndex = (this.attackIndex + 1) % attacks.length;
-            this.attackTimer = this.getAttackDuration(attacks[this.attackIndex]);
-        }
-
-        this.executeAttack(attacks[this.attackIndex]);
-        this.attackTimer--;
-    }
-
-    getAttackDuration(attackName) {
-        switch (attackName) {
-            case 'spiral': return 120;
-            case 'aimed': return 80;
-            case 'ring': return 100;
-            case 'blade': return 140;
-            case 'rain': return 90;
-            default: return 100;
-        }
-    }
-
-    executeAttack(attackName) {
-        switch (attackName) {
-            case 'spiral': this.spiralAttack(); break;
-            case 'aimed': this.aimedAttack(); break;
-            case 'ring': this.ringAttack(); break;
-            case 'blade': this.bladeAttack(); break;
-            case 'rain': this.rainAttack(); break;
-        }
-    }
-
-    spiralAttack() {
-        // Плотная спираль из двух источников (левое/правое крыло или из центра)
-        if (this.timer % 8 === 0) {
-            const baseAngle = this.timer * 0.05;
-            for (let i = 0; i < 24; i++) {
-                const angle = baseAngle + (Math.PI * 2 / 24) * i;
-                const speed = 2.5 + (this.phase - 1) * 0.5;
-                this.game.bullets.push(new Bullet(this.x, this.y, angle, speed, true));
+        // Атака Hibachi: два наложенных спиральных кольца с разной скоростью
+        // Пули большие и быстрые
+        if (this.timer % 4 === 0) {
+            const bulletCount = 24;
+            // Первое кольцо (быстрое)
+            const base1 = this.timer * 0.09;
+            for (let i = 0; i < bulletCount; i++) {
+                const angle = base1 + (Math.PI * 2 / bulletCount) * i;
+                const bullet = new Bullet(this.x, this.y, angle, 3.5, true);
+                bullet.width = 14;
+                bullet.height = 14;
+                this.game.bullets.push(bullet);
             }
-        }
-    }
-
-    aimedAttack() {
-        // Прицельная очередь в игрока
-        if (this.timer % 15 === 0) {
-            const player = this.game.player;
-            const angle = Math.atan2(player.y - this.y, player.x - this.x);
-            for (let i = -2; i <= 2; i++) {
-                const a = angle + i * 0.08;
-                this.game.bullets.push(new Bullet(this.x, this.y, a, 4.5, true));
-            }
-        }
-    }
-
-    ringAttack() {
-        // Расширяющееся кольцо
-        if (this.timer % 40 === 0) {
-            const count = 32 + (this.phase - 2) * 8;
-            for (let i = 0; i < count; i++) {
-                const angle = (Math.PI * 2 / count) * i;
-                const speed = 2.0 + (this.phase - 2) * 0.3;
-                this.game.bullets.push(new Bullet(this.x, this.y, angle, speed, true));
-            }
-        }
-    }
-
-    bladeAttack() {
-        // Вращающиеся «лезвия» (несколько лучей из пуль)
-        if (this.timer % 12 === 0) {
-            const blades = 4 + (this.phase - 3);
-            const base = this.timer * 0.02;
-            for (let b = 0; b < blades; b++) {
-                const angle = base + (Math.PI * 2 / blades) * b;
-                for (let j = 0; j < 8; j++) {
-                    const dist = 20 + j * 10;
-                    const bx = this.x + Math.cos(angle) * dist;
-                    const by = this.y + Math.sin(angle) * dist;
-                    this.game.bullets.push(new Bullet(bx, by, angle, 0.5, true));
-                }
-            }
-        }
-    }
-
-    rainAttack() {
-        // Падающие пули сверху (как в оригинальной фазе дождя)
-        if (this.timer % 20 === 0) {
-            for (let x = 40; x <= 360; x += 40) {
-                this.game.bullets.push(new Bullet(x, -10, Math.PI / 2, 2.8, true));
+            // Второе кольцо (медленнее, вращается в противоположную сторону)
+            const base2 = -this.timer * 0.05;
+            for (let i = 0; i < bulletCount; i++) {
+                const angle = base2 + (Math.PI * 2 / bulletCount) * i;
+                const bullet = new Bullet(this.x, this.y, angle, 2.8, true);
+                bullet.width = 12;
+                bullet.height = 12;
+                this.game.bullets.push(bullet);
             }
         }
     }
 
     draw(ctx) {
-        // Отрисовка модулей
-        for (const m of this.modules) {
-            if (m.hp <= 0) continue;
-            ctx.fillStyle = '#080808';
-            ctx.fillRect(m.x - 18, m.y - 18, 36, 36);
-            ctx.strokeStyle = '#d9d9d9';
-            ctx.strokeRect(m.x - 18, m.y - 18, 36, 36);
-            ctx.fillStyle = '#ff0023';
-            ctx.beginPath();
-            ctx.arc(m.x, m.y, 6, 0, Math.PI*2);
-            ctx.fill();
-        }
-
         ctx.save();
         const t = this.timer;
 
@@ -536,23 +404,6 @@ class Boss {
             ctx.stroke();
         }
 
-        // Эффекты фаз
-        if (this.phase >= 2) {
-            ctx.strokeStyle = '#ffffff55';
-            ctx.beginPath();
-            ctx.arc(0, 0, 42 + Math.sin(t * 0.2) * 4, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-        if (this.phase >= 3) {
-            for (let i = 0; i < 8; i++) {
-                const a = t * 0.04 + (Math.PI * 2 / 8) * i;
-                ctx.fillStyle = '#ff3355';
-                ctx.beginPath();
-                ctx.arc(Math.cos(a) * 90, Math.sin(a) * 90, 5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
         ctx.setTransform(1, 0, 0, 1, 0, 0);
 
         // HP бар
@@ -574,11 +425,6 @@ class Boss {
 
     hit(damage = 1) {
         this.health -= damage;
-        // Если уничтожены оба модуля, можно наносить повышенный урон (опционально)
-        const modulesAlive = this.modules.filter(m => m.hp > 0).length;
-        if (modulesAlive === 0) {
-            // дополнительный урон не реализуем, оставим как есть
-        }
         return this.health <= 0;
     }
 }
@@ -625,7 +471,6 @@ class Game {
         this.gameRunning = false;
         this.gameOver = false;
         this.gameComplete = false;
-        this.gameTimer = 0;
 
         this.laserMode = false;
         this.laserKeyDown = false;
@@ -783,7 +628,6 @@ class Game {
         this.player = new Player(200, 500, this.playerImage);
         this.bullets = [];
         this.boss = null;
-        this.gameTimer = 0;
         this.laserMode = false;
         this.laserKeyDown = false;
         this.twoFingers = false;
@@ -848,7 +692,6 @@ class Game {
         if (!this.gameRunning || this.gameOver || this.gameComplete) return;
 
         this.bgY = (this.bgY + this.bgSpeed) % this.canvas.height;
-        this.gameTimer++;
 
         this.laserMode = this.laserKeyDown || this.twoFingers;
 
@@ -903,18 +746,6 @@ class Game {
                         this.completeGame();
                     }
                     continue;
-                }
-                // Проверка попадания в модули
-                for (const m of this.boss.modules) {
-                    if (m.hp <= 0) continue;
-                    const mdx = bullet.x - (this.boss.x + m.x);
-                    const mdy = bullet.y - (this.boss.y + m.y);
-                    if (Math.sqrt(mdx * mdx + mdy * mdy) < 25) {
-                        this.bullets.splice(i, 1);
-                        m.hp -= 5; // урон по модулям
-                        this.sound.bossHit();
-                        break;
-                    }
                 }
             }
         }
@@ -997,7 +828,7 @@ class Game {
             }
         }
 
-        // Счёт (без волны)
+        // Счёт
         ctx.font = `${UI.score.size}px "Unbounded", "Unbounded Medium", Arial`;
         ctx.fillStyle = UI.score.color;
         ctx.textAlign = 'right';
@@ -1097,7 +928,7 @@ class Game {
     }
 }
 
-// Обработчики видимости и закрытия попапов (как в оригинале)
+// Обработчики видимости и закрытия попапов
 document.addEventListener('visibilitychange', async () => {
     if (!document.hidden) {
         try {
