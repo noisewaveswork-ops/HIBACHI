@@ -273,6 +273,12 @@ class Boss {
         this.entered = false;
         this.targetY = 100;
         this.points = 10000;
+
+        // Загрузка спрайта
+        this.sprite = new Image();
+        this.sprite.src = 'assets/hibachi.png';
+        this.spriteWidth = 140;   // подгони под реальные размеры спрайта
+        this.spriteHeight = 140;
     }
 
     update() {
@@ -292,9 +298,9 @@ class Boss {
         // Атака Hibachi: два наложенных спиральных кольца с разной скоростью
         // Пули большие и быстрые
         if (this.timer % 4 === 0) {
-            const bulletCount = 24;
+            const bulletCount = 6;
             // Первое кольцо (быстрое)
-            const base1 = this.timer * 0.02;
+            const base1 = this.timer * 0.01;
             for (let i = 0; i < bulletCount; i++) {
                 const angle = base1 + (Math.PI * 2 / bulletCount) * i;
                 const bullet = new Bullet(this.x, this.y, angle, 3.5, true);
@@ -303,7 +309,7 @@ class Boss {
                 this.game.bullets.push(bullet);
             }
             // Второе кольцо (медленнее, вращается в противоположную сторону)
-            const base2 = -this.timer * 0.05;
+            const base2 = -this.timer * 0.005;
             for (let i = 0; i < bulletCount; i++) {
                 const angle = base2 + (Math.PI * 2 / bulletCount) * i;
                 const bullet = new Bullet(this.x, this.y, angle, 2.8, true);
@@ -315,113 +321,41 @@ class Boss {
     }
 
     draw(ctx) {
-        ctx.save();
-        const t = this.timer;
+    ctx.save();
 
-        // Мощное свечение
-        const aura = ctx.createRadialGradient(this.x, this.y, 20, this.x, this.y, 140);
-        aura.addColorStop(0, 'rgba(255,0,35,0.35)');
-        aura.addColorStop(1, 'rgba(255,0,35,0)');
-        ctx.fillStyle = aura;
+    // Если спрайт загружен — рисуем его
+    if (this.sprite && this.sprite.complete && this.sprite.naturalWidth > 0) {
+        ctx.drawImage(
+            this.sprite,
+            this.x - this.spriteWidth / 2,
+            this.y - this.spriteHeight / 2,
+            this.spriteWidth,
+            this.spriteHeight
+        );
+    } else {
+        // Запасная отрисовка (если картинка ещё не загрузилась)
+        ctx.fillStyle = '#ff0023';
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 140, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, 50, 0, Math.PI * 2);
         ctx.fill();
-
-        // Вращающееся гало
-        ctx.translate(this.x, this.y);
-        ctx.rotate(t * 0.01);
-        ctx.strokeStyle = 'rgba(255,80,100,0.4)';
-        ctx.lineWidth = 4;
-        for (let i = 0; i < 3; i++) {
-            ctx.beginPath();
-            ctx.arc(0, 0, 70 + i * 12, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-        ctx.rotate(-t * 0.01);
-
-        // Основное тело
-        const body = ctx.createLinearGradient(-80, -80, 80, 80);
-        body.addColorStop(0, '#6b0f18');
-        body.addColorStop(0.35, '#ff0023');
-        body.addColorStop(1, '#140004');
-        ctx.fillStyle = body;
-        ctx.shadowBlur = 40;
-        ctx.shadowColor = '#ff0023';
-        ctx.beginPath();
-        ctx.moveTo(0, -70);
-        ctx.lineTo(58, -40);
-        ctx.lineTo(72, 0);
-        ctx.lineTo(50, 60);
-        ctx.lineTo(0, 80);
-        ctx.lineTo(-50, 60);
-        ctx.lineTo(-72, 0);
-        ctx.lineTo(-58, -40);
-        ctx.closePath();
-        ctx.fill();
-
-        // Пушки по бокам
-        ctx.fillStyle = '#252530';
-        for (let i = -1; i <= 1; i += 2) {
-            ctx.fillRect(i * 70 - 12, -16, 24, 64);
-            ctx.fillStyle = '#ff0023';
-            ctx.beginPath();
-            ctx.arc(i * 70, 48, 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#252530';
-        }
-
-        // Центральное ядро
-        const core = ctx.createRadialGradient(0, -10, 2, 0, 0, 26);
-        core.addColorStop(0, '#ffffff');
-        core.addColorStop(0.25, '#ffcccc');
-        core.addColorStop(1, '#ff0023');
-        ctx.fillStyle = core;
-        ctx.shadowBlur = 35;
-        ctx.shadowColor = '#ff3355';
-        ctx.beginPath();
-        ctx.arc(0, 0, 24, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Линии брони
-        ctx.strokeStyle = '#999';
-        ctx.lineWidth = 2;
-        for (let i = -2; i <= 2; i++) {
-            ctx.beginPath();
-            ctx.moveTo(i * 12, -50);
-            ctx.lineTo(i * 8, 60);
-            ctx.stroke();
-        }
-
-        // Щупальца-двигатели
-        ctx.strokeStyle = '#ff0023';
-        ctx.lineWidth = 5;
-        for (let i = 0; i < 6; i++) {
-            const angle = Math.PI / 2 + (i - 2.5) * 0.24;
-            const len = 70 + Math.sin(t * 0.08 + i) * 18;
-            ctx.beginPath();
-            ctx.moveTo(Math.cos(angle) * 40, Math.sin(angle) * 40);
-            ctx.lineTo(Math.cos(angle) * len, Math.sin(angle) * len);
-            ctx.stroke();
-        }
-
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-        // HP бар
-        const bw = 240, bh = 12, bx = 80, by = 30;
-        ctx.fillStyle = '#111';
-        ctx.fillRect(bx, by, bw, bh);
-        const hp = ctx.createLinearGradient(bx, 0, bx + bw, 0);
-        hp.addColorStop(0, '#ff0000');
-        hp.addColorStop(0.5, '#ff6600');
-        hp.addColorStop(1, '#ffff00');
-        ctx.fillStyle = hp;
-        ctx.fillRect(bx, by, bw * (this.health / this.maxHealth), bh);
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(bx, by, bw, bh);
-
-        ctx.restore();
     }
+
+    // HP бар (можно оставить или доработать)
+    const bw = 240, bh = 12, bx = 80, by = 30;
+    ctx.fillStyle = '#111';
+    ctx.fillRect(bx, by, bw, bh);
+    const hp = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+    hp.addColorStop(0, '#ff0000');
+    hp.addColorStop(0.5, '#ff6600');
+    hp.addColorStop(1, '#ffff00');
+    ctx.fillStyle = hp;
+    ctx.fillRect(bx, by, bw * (this.health / this.maxHealth), bh);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx, by, bw, bh);
+
+    ctx.restore();
+}
 
     hit(damage = 1) {
         this.health -= damage;
@@ -737,7 +671,7 @@ class Game {
             if (!bullet.isEnemy && this.boss) {
                 const dx = bullet.x - this.boss.x;
                 const dy = bullet.y - this.boss.y;
-                if (Math.sqrt(dx * dx + dy * dy) < 40) {
+                if (Math.sqrt(dx * dx + dy * dy) < 30) {
                     this.bullets.splice(i, 1);
                     this.sound.bossHit();
                     if (this.boss.hit(bullet.damage || 1)) {
