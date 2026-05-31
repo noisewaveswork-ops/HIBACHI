@@ -267,7 +267,7 @@ class Boss {
         this.x = x;
         this.y = y;
         this.game = game;
-        this.maxHealth = 250;
+        this.maxHealth = 600;
         this.health = this.maxHealth;
         this.timer = 0;
         this.entered = false;
@@ -409,7 +409,7 @@ class Game {
         this.bgImage = new Image();
         this.bgImage.src = 'assets/background.png';
         this.bgY = 0;
-        this.bgSpeed = 5;
+        this.bgSpeed = 6;
 
         this.playerImage = new Image();
         this.playerImage.src = 'assets/player.png';
