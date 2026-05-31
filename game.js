@@ -303,7 +303,7 @@ class Boss {
             const base1 = this.timer * 0.03;
             for (let i = 0; i < bulletCount; i++) {
                 const angle = base1 + (Math.PI * 2 / bulletCount) * i;
-                const bullet = new Bullet(this.x, this.y, angle, 3.5, true);
+                const bullet = new Bullet(this.x, this.y, angle, 6, true);
                 bullet.width = 14;
                 bullet.height = 14;
                 this.game.bullets.push(bullet);
@@ -312,7 +312,7 @@ class Boss {
             const base2 = -this.timer * 0.01;
             for (let i = 0; i < bulletCount; i++) {
                 const angle = base2 + (Math.PI * 2 / bulletCount) * i;
-                const bullet = new Bullet(this.x, this.y, angle, 2.8, true);
+                const bullet = new Bullet(this.x, this.y, angle, 6, true);
                 bullet.width = 12;
                 bullet.height = 12;
                 this.game.bullets.push(bullet);
