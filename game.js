@@ -355,12 +355,12 @@ class Boss {
     // Если спрайт загружен — рисуем его
     if (this.sprite && this.sprite.complete && this.sprite.naturalWidth > 0) {
         ctx.drawImage(
-            this.sprite,
-            this.x - this.spriteWidth / 2,
-            this.y - this.spriteHeight / 2,
-            this.spriteWidth,
-            this.spriteHeight
-        );
+    this.sprite,
+    this.x - this.width / 2,
+    this.y - this.height / 2,
+    this.width,
+    this.height
+);
     } else {
         // Запасная отрисовка (если картинка ещё не загрузилась)
         ctx.fillStyle = '#ff0023';
@@ -700,7 +700,7 @@ class Game {
             if (!bullet.isEnemy && this.boss) {
                 const dx = bullet.x - this.boss.x;
                 const dy = bullet.y - this.boss.y;
-                if (Math.sqrt(dx * dx + dy * dy) < 30) {
+                if (Math.sqrt(dx * dx + dy * dy) < this.boss.hitboxRadius) {
                     this.bullets.splice(i, 1);
                     this.sound.bossHit();
                     if (this.boss.hit(bullet.damage || 1)) {
